@@ -1,0 +1,60 @@
+use crate::Error;
+use sqlx::postgres::PgPool;
+
+mod story;
+mod task;
+
+/// Database abstraction layer.
+pub struct Repo {
+    db: PgPool,
+}
+
+impl Repo {
+    /// Constructor
+    pub fn new(db: PgPool) -> Self {
+        Self { db }
+    }
+}
+
+impl From<sqlx::Error> for Error {
+    fn from(err: sqlx::Error) -> Self {
+        let msg = err.to_string();
+        match err {
+            sqlx::Error::InvalidArgument(inner) => Error::invalid_args(inner),
+            sqlx::Error::RowNotFound => Error::not_found(msg),
+            _ => Error::internal(msg),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use sqlx::{
+        migrate::Migrator,
+        postgres::{PgPool, PgPoolOptions},
+    };
+    use std::path::Path;
+
+    use testcontainers::ContainerAsync as Container;
+    use testcontainers_modules::postgres::Postgres;
+
+    /// Given a running Postgres container, set up a connection pool and run migrations.
+    pub async fn setup_pg_pool(container: &Container<Postgres>) -> PgPool {
+        let connection_string = &format!(
+            "postgres://postgres:postgres@localhost:{}/postgres",
+            container.get_host_port_ipv4(5432).await.unwrap(),
+        );
+
+        let pool = PgPoolOptions::new()
+            .max_connections(2)
+            .min_connections(1)
+            .connect(&connection_string)
+            .await
+            .unwrap();
+
+        let m = Migrator::new(Path::new("./migrations")).await.unwrap();
+        m.run(&pool).await.unwrap();
+
+        pool
+    }
+}
