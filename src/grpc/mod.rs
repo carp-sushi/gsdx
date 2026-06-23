@@ -87,9 +87,9 @@ where
         request: Request<UpdateStoryRequest>,
     ) -> Result<Response<UpdateStoryResponse>, GrpcStatus> {
         log::debug!("Update story");
-        let request = request.get_ref();
+        let request = request.into_inner();
         let story_id = validate_story_id(&request.story_id)?;
-        let name = validate_name(&request.name)?;
+        let name = validate_name(request.name)?;
         let story = self.stories.update(story_id, name).await?;
         Ok(Response::new(UpdateStoryResponse {
             story: Some(StoryData::from(story)),
@@ -116,9 +116,9 @@ where
         request: Request<CreateTaskRequest>,
     ) -> Result<Response<CreateTaskResponse>, GrpcStatus> {
         log::debug!("Create task");
-        let request = request.get_ref();
+        let request = request.into_inner();
         let story_id = validate_story_id(&request.story_id)?;
-        let name = validate_name(&request.name)?;
+        let name = validate_name(request.name)?;
         let task_status = TaskStatus::try_from(request.status).unwrap_or(TaskStatus::Unspecified);
         let status = Status::from(task_status);
         let task = self.tasks.create(story_id, name, status).await?;

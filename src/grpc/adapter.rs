@@ -13,7 +13,7 @@ impl From<Error> for GrpcStatus {
             Error::NotFound { message } => GrpcStatus::not_found(message),
             Error::InvalidArgs { messages } => GrpcStatus::invalid_argument(messages.join(",")),
             Error::Internal { message } => {
-                log::error!("Internal error in service: {}", message);
+                log::error!("Internal error: {}", message);
                 GrpcStatus::internal(message)
             }
         }

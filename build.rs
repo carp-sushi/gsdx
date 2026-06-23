@@ -1,6 +1,7 @@
 use std::{env, error::Error, path::PathBuf};
 
 fn main() -> Result<(), Box<dyn Error>> {
+    println!("cargo:rerun-if-changed=proto/gsdx/v1/gsdx.proto");
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     tonic_prost_build::configure()
         .build_client(true)
